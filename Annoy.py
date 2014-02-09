@@ -3,7 +3,6 @@ import urllib2
 import wikipedia
 import os
 import logging as log
-import time
 from bs4 import BeautifulSoup
 
 class Annoy():

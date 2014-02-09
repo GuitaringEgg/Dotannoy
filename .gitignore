@@ -38,3 +38,4 @@ nosetests.xml
 # My Stuff
 annoy.cfg
 annoy.txt
+autoexec.cfg
