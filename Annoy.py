@@ -1,10 +1,14 @@
 import random
 import urllib2
+import wikipedia
+import os
+import logging as log
+import time
 from bs4 import BeautifulSoup
 
 class Annoy():
 	# A list of available sites
-	sites = ["sickipedia-random", "sickipedia-top-100", "anti-jokes-random", "anti-jokes-top"]
+	sites = ["sickipedia-random", "sickipedia-top-100", "anti-jokes-random", "wikipedia-random"]
 	# Input and output files
 	inf = ""
 	outf = ""
@@ -16,46 +20,76 @@ class Annoy():
 
 	# Main functions. Handles the arguments and passes to functions that are needed
 	def run(self, args):
+		# Set logging level
+		if args.verbose:
+		    log.basicConfig(format="%(levelname)s: %(message)s", level=log.INFO)
+		    log.info("Verbose output.")
+		else:
+		    log.basicConfig(format="%(levelname)s: %(message)s")
+
 		# Handle input file argument
 		if args.input:
 			if args.input[-4:] == ".txt":
-				print "Warning: input file is not a text file. Are you sure you typed the name right?"
-			if os.path.exists(args.input) && !args.download && !args.default:
+				log.warning("input file is not a text file. Are you sure you typed the name right?")
+			if os.path.exists(args.input) and not args.download and not args.default_puns:
 				self.inf = args.input
 			else:
-				print "Error: input file does not exist. Exiting..."
+				log.error("input file does not exist. Exiting...")
 				return
 		else:
-			if os.path.exists("annoy.txt") && !args.download && !args.default:
+			if os.path.exists("annoy.txt") or args.download or args.default_puns:
 				self.inf = "annoy.txt"
 			else:
-				print "Error: annoy.txt does not exist. Exiting..."
+				log.error("annoy.txt does not exist. Exiting...")
 				return
 
 		# Handle output file argument
 		if args.output:
 			if args.output[-4:] == ".cfg":
-				print "Warning: output file is not a config file. Are you sure you typed the name right?"
+				log.warning("output file is not a config file. Are you sure you typed the name right?")
 			self.outf = args.output
 		else:
 			self.outf = "annoy.cfg"
 
 		# Handle list argument and return
 		if args.list:
-			print_sites()
+			self.print_sites()
 			return
 
-		if args.default:
-			default_puns
+		# Load in the default puns if we need them
+		if args.default_puns:
+			self.default_puns()
+
+
+		# Find the site to download puns from if we need to
+		if not args.default_puns and args.download:
+			if args.download == self.sites[0]:
+				self.sickipedia_random(10)
+			elif args.download == self.sites[1]:
+				self.sickipedia_top_100()
+			elif args.download == self.sites[2]:
+				self.anti_joke_random(10)
+			elif args.download == self.sites[3]:
+				self.wikipedia_random(100)
+			else:
+				log.error("Unknown site {}. Can't download anything.\n\tUse 'Dotannoy -l' to see a list of avaiable sites.".format(args.download))
+				return
+
+		# Generate the config file
+		self.generate_config(args)
+
+
+		# Append to autoexec if needed
+		if args.autoexec:
+			self.append_autoexec()
 
 	# Print a list of avaiable sites to download from
 	def print_sites(self):
-		print "Avoid sites to download jokes from are:\n\t"
-		print "\n\t".join(sites)
+		print "Avoid sites to download jokes from are:\n\t" + "\n\t".join(self.sites)
 		print "\nJust use 'Dotannoy -d SITE_NAME' to download jokes from that site"
 
 	# Generate the file config file
-	def generate_config(self, force):
+	def generate_config(self, args):
 		f = open(self.inf, "r")
 		o = open(self.outf, "w")
 
@@ -64,13 +98,17 @@ class Annoy():
 		i = 0
 		for line in f:
 		    if len(line.strip()) > 127:
-		    	if force:
+		    	if args.force:
 		    		jokes.append(line.strip()[:127])
 		    	else:
-		        	print "Warning: Joke on line {} exceeds the Dota 2 character limit by {} characters. It will not be saved.".format(i, len(line.strip()) - 127)
+		        	log.warning("Joke on line {} exceeds the Dota 2 character limit by {} characters.".format(i, len(line.strip()) - 127))
 		    else:
 		        jokes.append(line.strip())
 		    i += 1
+
+		if len(jokes) == 0:
+			log.error("Input file doesn't seem to contain any lines. Please make sure {} contains text.".format(self.inf))
+			return
 
 		# Shuffle all the jokes
 		random.shuffle(jokes)
@@ -92,13 +130,29 @@ class Annoy():
 		# Write the rest of the boring config
 		o.write("alias ran_say ran_say0\n")
 		o.write("alias ran_move ran_move0\n\n")
-		o.write("bind o ran_move\n")
-		o.write("bind p ran_say\n\n")
-		o.write("bind mouse1 ran_move\n\n")
+		if args.ran_key:
+			o.write("bind {} ran_move\n".format(args.ran_key))
+		o.write("bind {} ran_say\n\n".format(args.say_key))
+		o.write("bind mouse1 ran_move\n")
 		o.write("bind mouse2 ran_move\n\n")
 
 		o.close()
 		f.close()
+
+	# Append the exec of this config to the file
+	def append_autoexec(self):
+		if not os.path.exists("autoexec.cfg"):
+			o = open("autoexec.cfg", "w")
+			o.write("exec {}\n".format(self.outf))
+			o.close()
+		else:
+			o = open("autoexec.cfg", "a+")
+			for line in o:
+				if line.find("exec {}".format(self.outf)) != -1:
+					o.close()
+					return
+			o.write("exec {}\n".format(self.outf))
+			o.close()
 
 	# Download random jokes from sickipedia
 	def sickipedia_random(self, n):
@@ -151,9 +205,41 @@ class Annoy():
 
 		o.close()
 
+	# Download top jokes from anti-jokes.com
+	def anti_joke_top(self):
+		pass
+
+	# Download random articles from wikipedia
+	def wikipedia_random(self, n):
+		print "Downloading pages from Wikipedia. This may take a moment..."
+		f = open(self.inf, "w")
+		pages = []
+		for x in range(n/10):
+			pages+= (wikipedia.random(10))
+		log.info("Found {} random wikipedia pages".format(len(pages)))
+
+		for page in pages:
+			info = None
+			try:
+				info = wikipedia.page(page)
+			except wikipedia.exceptions.DisambiguationError as e:
+				info = wikipedia.page(e.options[0])
+			s = info.summary.encode("ascii", "ignore").replace("\n", " ")
+			if len(s) < 127:
+				log.info("Wrote line with no edits")
+				f.write(s + "\n")
+			else:
+				if s.find(". ") != -1:
+					f.write(s[:s.find(". ")+1] + "\n")
+					log.info("Summary too long, but was truncated")
+				else:
+					log.info("Summary too long and couldn't truncate")
+		print "Wrote {} lines".format(write_count)
+		f.close()
+
 	# Copy the default puns into the text file
 	def default_puns(self):
-		o = open(self.input, "w")
+		o = open(self.inf, "w")
 		i = open("default.txt", "r")
 		for line in i:
 			o.write(line)
