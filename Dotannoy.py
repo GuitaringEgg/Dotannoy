@@ -15,6 +15,8 @@ parser.add_argument("--output", "-o", metavar="file"
                     help="the file that the config will be saved to")
 parser.add_argument("--autoexec", "-a", action="store_false",
                     help="diable the appending of the execution of the script when Dota starts")
+parser.add_argument("--force", "-f", action="store_true",
+                    help="force jokes that exceed the line length to be trucated and saved anyway")
 
 parser.add_argument("--say_key", "-sk", metavar="key",
 					help="set the key that the say bind is set to")
