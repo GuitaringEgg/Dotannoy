@@ -2,6 +2,7 @@ import random
 import urllib2
 import wikipedia
 import os
+import json
 import logging as log
 from bs4 import BeautifulSoup
 
@@ -11,6 +12,10 @@ class Annoy():
 	# Input and output files
 	inf = ""
 	outf = ""
+	# config settings
+	config = None
+
+	location = os.getcwd()
 
 	# Default consturcter. Doesn't do anything
 	def __init__(self):
@@ -19,12 +24,25 @@ class Annoy():
 
 	# Main functions. Handles the arguments and passes to functions that are needed
 	def run(self, args):
+		self.load_config()
+
+
 		# Set logging level
 		if args.verbose:
 		    log.basicConfig(format="%(levelname)s: %(message)s", level=log.INFO)
 		    log.info("Verbose output.")
 		else:
 		    log.basicConfig(format="%(levelname)s: %(message)s")
+
+		# try and find
+		if args.steamapps:
+			if not self.check_steamapps(args):
+				return 1
+		else:
+			if not self.find_steamapps():
+				log.error("Could not find steam install. Please specify the location using 'dotannoy -s STEAMAPPS")
+				return 1
+
 
 		# Handle input file argument
 		if args.input:
@@ -34,13 +52,13 @@ class Annoy():
 				self.inf = args.input
 			else:
 				log.error("input file does not exist. Exiting...")
-				return
+				return 1
 		else:
 			if os.path.exists("annoy.txt") or args.download or args.default_puns:
 				self.inf = "annoy.txt"
 			else:
 				log.error("annoy.txt does not exist. Exiting...")
-				return
+				return 1
 
 		# Handle output file argument
 		if args.output:
@@ -72,15 +90,59 @@ class Annoy():
 				self.wikipedia_random(100)
 			else:
 				log.error("Unknown site {}. Can't download anything.\n\tUse 'Dotannoy -l' to see a list of avaiable sites.".format(args.download))
-				return
+				return 1
 
 		# Generate the config file
-		self.generate_config(args)
+		if not self.generate_config(args):
+			return 1
 
 
 		# Append to autoexec if needed
 		if args.autoexec:
 			self.append_autoexec()
+
+		self.save_config()
+
+		return 0
+
+	def check_steamapps(self, args):
+		dota_path = "common\\dota 2 beta\\dota\\cfg"
+		if os.path.exists(args.steamapps):
+				if args.steamapps.find(dota_path) != -1:
+					os.chdir(args.steamapps)
+					self.config["steamapps"] = args.steamapps
+					self.save_config()
+					return True
+				elif args.steamapps.lower().rfind("steamapps") != -1:
+					if os.path.exists(os.path.join(args.steamapps, dota_path)):
+						self.config["steamapps"] = os.path.join(args.steamapps, dota_path)
+						os.chdir(os.path.join(args.steamapps, dota_path))
+						return True
+		else:
+			log.error("Steamapps path given does not exist.")
+			return False
+
+		log.warning("Steamapps location didn't include steamapps in the name. Are you sure it's right?")
+		return False
+
+	def find_steamapps(self):
+		dota_path = "\\steamapps\\common\\dota 2 beta\\dota\\cfg"
+		if os.getcwd().find("SteamApps\common\dota 2 beta\dota\config") != -1:
+			self.config["steamapps"] = os.getcwd()
+			self.save_config()
+			return True
+
+		if self.config["steamapps"]:
+			os.chdir(self.config["steamapps"])
+			return True
+
+		if os.path.exists(os.path.expandvars("%PROGRAMFILES%") + "\\steam\\" + dota_path):
+			self.config["steamapps"] = os.path.expandvars("%PROGRAMFILES%") + "\\steam\\" + dota_path
+			self.save_config()
+			os.chdir(os.path.expandvars("%PROGRAMFILES%") + "\\steam\\" + dota_path)
+			return True
+
+		return False
 
 	# Print a list of avaiable sites to download from
 	def print_sites(self):
@@ -107,7 +169,7 @@ class Annoy():
 
 		if len(jokes) == 0:
 			log.error("Input file doesn't seem to contain any lines. Please make sure {} contains text.".format(self.inf))
-			return
+			return False
 
 		# Shuffle all the jokes
 		random.shuffle(jokes)
@@ -137,6 +199,8 @@ class Annoy():
 
 		o.close()
 		f.close()
+
+		return True
 
 	# Append the exec of this config to the file
 	def append_autoexec(self):
@@ -222,7 +286,14 @@ class Annoy():
 			try:
 				info = wikipedia.page(page)
 			except wikipedia.exceptions.DisambiguationError as e:
-				info = wikipedia.page(e.options[0])
+				try:
+					info = wikipedia.page(e.options[0])
+				except wikipedia.exceptions.DisambiguationError as e:
+					continue
+				except wikipedia.exceptions.HTTPTimeoutError:
+					continue
+			except wikipedia.exceptions.HTTPTimeoutError:
+				continue
 			s = info.summary.encode("ascii", "ignore").replace("\n", " ")
 			if len(s) < 127:
 				log.info("Wrote line with no edits")
@@ -233,7 +304,6 @@ class Annoy():
 					log.info("Summary too long, but was truncated")
 				else:
 					log.info("Summary too long and couldn't truncate")
-		print "Wrote {} lines".format(write_count)
 		f.close()
 
 	# Copy the default puns into the text file
@@ -244,3 +314,16 @@ class Annoy():
 			o.write(line)
 		o.close()
 		i.close()
+
+
+	def load_config(self):
+		f = open("config.json", "r")
+		self.config = json.load(f)
+		f.close()
+
+	def save_config(self):
+		f = open(self.location + "\\config.json", "w")
+		json.dump(self.config, f, sort_keys=True, indent=4, separators=(',', ': '))
+		f.flush()
+
+		f.close()

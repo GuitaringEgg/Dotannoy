@@ -1,5 +1,6 @@
 import argparse
 import Annoy
+import sys
 from Annoy import Annoy
 
 parser = argparse.ArgumentParser(description="Generate a dota config that binds line from a text file to a key.")
@@ -19,6 +20,8 @@ parser.add_argument("--force", "-f", action="store_true",
                     help="force jokes that exceed the line length to be trucated and saved anyway")
 parser.add_argument("--verbose", "-v", action="store_true",
                     help="print out what is going on in the program")
+parser.add_argument("--steamapps", "-s",
+                    help="set the location of steamapps")
 
 parser.add_argument("--say_key", "-sk", metavar="key", default="p",
 					help="set the key that the say bind is set to")
@@ -28,5 +31,6 @@ parser.add_argument("--ran_key", "-rk", metavar="key",
 args = parser.parse_args()
 
 annoy = Annoy()
-annoy.run(args)
+code = annoy.run(args)
+sys.exit(code)
 

@@ -39,3 +39,4 @@ nosetests.xml
 annoy.cfg
 annoy.txt
 autoexec.cfg
+*.spec
