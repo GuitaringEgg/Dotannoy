@@ -3,6 +3,7 @@ import urllib2
 import wikipedia
 import os
 import json
+import winpaths
 import logging as log
 from bs4 import BeautifulSoup
 
@@ -14,8 +15,6 @@ class Annoy():
 	outf = ""
 	# config settings
 	config = None
-
-	location = os.getcwd()
 
 	# Default consturcter. Doesn't do anything
 	def __init__(self):
@@ -318,19 +317,23 @@ class Annoy():
 
 	def load_config(self):
 		f = None
-		if os.path.exists("config.json"):
+		path = os.path.join(winpaths.get_appdata(), "Dotannoy")
+		if not os.path.exists(path):
+			os.makedirs(path)
+		path = os.path.join(path, "config.json")
+		if os.path.exists(path):
 			log.info("Loading config.json")
-			f = open("config.json", "r")
+			f = open(path, "r")
 			self.config = json.load(f)
 		else:
 			log.info("Couldn't find config.json. Creating default config")
-			f = open("config.json", "w")
+			f = open(path, "w")
 			json.dump({"steamapps":""}, f, sort_keys=True, indent=4, separators=(',', ': '))
 			self.config = {"steamapps":""}
 		f.close()
 
 	def save_config(self):
-		f = open(self.location + "\\config.json", "w")
+		f = open(os.path.join(winpaths.get_appdata(), "dotannoy\\config.json"), "w")
 		json.dump(self.config, f, sort_keys=True, indent=4, separators=(',', ': '))
 		f.flush()
 

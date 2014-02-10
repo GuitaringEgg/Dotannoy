@@ -4,7 +4,7 @@ import sys
 from Annoy import Annoy
 
 parser = argparse.ArgumentParser(description="Generate a dota config that binds line from a text file to a key.")
-parser.add_argument("--download", "-d",
+parser.add_argument("--download", "-d", metavar="SITE",
                     help="download jokes from a site. Use -l for a list of sites available")
 parser.add_argument("--list", "-l", action="store_true",
                     help="print a list of sites avaiable to download jokes from")
@@ -20,12 +20,12 @@ parser.add_argument("--force", "-f", action="store_true",
                     help="force jokes that exceed the line length to be trucated and saved anyway")
 parser.add_argument("--verbose", "-v", action="store_true",
                     help="print out what is going on in the program")
-parser.add_argument("--steamapps", "-s",
+parser.add_argument("--steamapps", "-s", metavar="PATH",
                     help="set the location of steamapps")
 
-parser.add_argument("--say_key", "-sk", metavar="key", default="p",
+parser.add_argument("--say_key", "-sk", metavar="KEY", default="p",
 					help="set the key that the say bind is set to")
-parser.add_argument("--ran_key", "-rk", metavar="key",
+parser.add_argument("--ran_key", "-rk", metavar="KEY",
 					help="set pthe key that randomises what to say next")
 
 args = parser.parse_args()
