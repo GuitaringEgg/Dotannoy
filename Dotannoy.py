@@ -9,7 +9,7 @@ parser.add_argument("--download", "-d", metavar="SITE",
 parser.add_argument("--list", "-l", action="store_true",
                     help="print a list of sites available to download jokes from")
 parser.add_argument("--default-puns", "-p", action="store_true",
-					help="use the default list of puns stored in default.txt")
+                    help="use the default list of puns stored in default.txt")
 parser.add_argument("--input", "-i", metavar="file",
                     help="the file that the lines will be taken from")
 parser.add_argument("--output", "-o", metavar="file",
@@ -22,11 +22,13 @@ parser.add_argument("--verbose", "-v", action="store_true",
                     help="print out what is going on in the program")
 parser.add_argument("--steamapps", "-s", metavar="PATH",
                     help="set the location of steamapps and exits")
+parser.add_argument("--items", "-n", type=int, metavar="N",
+                    help="number of items to download from the site")
 
 parser.add_argument("--say_key", "-sk", metavar="KEY", default="p",
-					help="set the key that the say bind is set to")
+                    help="set the key that the say bind is set to")
 parser.add_argument("--ran_key", "-rk", metavar="KEY",
-					help="set the key that randomises what to say next")
+                    help="set the key that randomises what to say next")
 
 args = parser.parse_args()
 
