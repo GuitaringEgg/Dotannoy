@@ -21,7 +21,7 @@ parser.add_argument("--force", "-f", action="store_true",
 parser.add_argument("--verbose", "-v", action="store_true",
                     help="print out what is going on in the program")
 parser.add_argument("--steamapps", "-s", metavar="PATH",
-                    help="set the location of steamapps")
+                    help="set the location of steamapps and exits")
 
 parser.add_argument("--say_key", "-sk", metavar="KEY", default="p",
 					help="set the key that the say bind is set to")

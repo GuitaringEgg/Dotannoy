@@ -20,12 +20,8 @@ class Annoy():
 	def __init__(self):
 		pass
 
-
 	# Main functions. Handles the arguments and passes to functions that are needed
 	def run(self, args):
-		self.load_config()
-
-
 		# Set logging level
 		if args.verbose:
 		    log.basicConfig(format="%(levelname)s: %(message)s", level=log.INFO)
@@ -33,14 +29,25 @@ class Annoy():
 		else:
 		    log.basicConfig(format="%(levelname)s: %(message)s")
 
-		# try and find
+		# load the config file
+		self.load_config()
+
+
+		# make sure we know where the dota config folder is
 		if args.steamapps:
 			if not self.check_steamapps(args):
 				return 1
+			else:
+				print "Successfully set the steamapps location to '{}'".format(self.config["steamapps"])
+				return 0
 		else:
 			if not self.find_steamapps():
 				log.error("Could not find steam install. Please specify the location using 'dotannoy -s STEAMAPPS")
 				return 1
+
+
+		# save the config file
+		self.save_config()
 
 
 		# Handle input file argument
@@ -59,6 +66,7 @@ class Annoy():
 				log.error("annoy.txt does not exist. Exiting...")
 				return 1
 
+
 		# Handle output file argument
 		if args.output:
 			if args.output[-4:] == ".cfg":
@@ -67,10 +75,12 @@ class Annoy():
 		else:
 			self.outf = "annoy.cfg"
 
+
 		# Handle list argument and return
 		if args.list:
 			self.print_sites()
 			return
+
 
 		# Load in the default puns if we need them
 		if args.default_puns:
@@ -80,16 +90,17 @@ class Annoy():
 		# Find the site to download puns from if we need to
 		if not args.default_puns and args.download:
 			if args.download == self.sites[0]:
-				self.sickipedia_random(10)
+				self.sickipedia_random(100)
 			elif args.download == self.sites[1]:
 				self.sickipedia_top_100()
 			elif args.download == self.sites[2]:
-				self.anti_joke_random(10)
+				self.anti_joke_random(100)
 			elif args.download == self.sites[3]:
 				self.wikipedia_random(100)
 			else:
 				log.error("Unknown site {}. Can't download anything.\n\tUse 'Dotannoy -l' to see a list of avaiable sites.".format(args.download))
 				return 1
+
 
 		# Generate the config file
 		if not self.generate_config(args):
@@ -100,41 +111,49 @@ class Annoy():
 		if args.autoexec:
 			self.append_autoexec()
 
-		self.save_config()
-
 		return 0
 
+	# Check that the passed steamapps is valid
 	def check_steamapps(self, args):
+		# path from steamapps to the dota config folder
 		dota_path = "common\\dota 2 beta\\dota\\cfg"
+
+		# make sure the given steamapps location is correct
 		if os.path.exists(args.steamapps):
-				if args.steamapps.find(dota_path) != -1:
-					os.chdir(args.steamapps)
-					self.config["steamapps"] = args.steamapps
-					self.save_config()
+			if args.steamapps.find(dota_path) != -1:
+				os.chdir(args.steamapps)
+				self.config["steamapps"] = os.getpath()
+				self.save_config()
+				return True
+			elif args.steamapps.lower().rfind("steamapps") != -1:
+				if os.path.exists(os.path.join(args.steamapps, dota_path)):
+					self.config["steamapps"] = os.path.join(args.steamapps, dota_path)
+					os.chdir(os.path.join(args.steamapps, dota_path))
 					return True
-				elif args.steamapps.lower().rfind("steamapps") != -1:
-					if os.path.exists(os.path.join(args.steamapps, dota_path)):
-						self.config["steamapps"] = os.path.join(args.steamapps, dota_path)
-						os.chdir(os.path.join(args.steamapps, dota_path))
-						return True
 		else:
 			log.error("Steamapps path given does not exist.")
 			return False
 
-		log.warning("Steamapps location didn't include steamapps in the name. Are you sure it's right?")
+		log.error("Steamapps location didn't seem to contain the Dota 2 install.")
 		return False
 
+	# Try to find the steamapps folder from program files or the config file
 	def find_steamapps(self):
+		# default dota path
 		dota_path = "\\steamapps\\common\\dota 2 beta\\dota\\cfg"
-		if os.getcwd().find("SteamApps\common\dota 2 beta\dota\config") != -1:
+
+		# if we are already in the config folder, save the location and continue
+		if os.getcwd().find("SteamApps\\common\\dota 2 beta\\dota\\config") != -1:
 			self.config["steamapps"] = os.getcwd()
 			self.save_config()
 			return True
 
+		# if the config folder already has the location, change into the directory
 		if self.config["steamapps"]:
 			os.chdir(self.config["steamapps"])
 			return True
 
+		# if we can't find it, try and file the steam folder in program files, the default install location
 		if os.path.exists(os.path.expandvars("%PROGRAMFILES%") + "\\steam\\" + dota_path):
 			self.config["steamapps"] = os.path.expandvars("%PROGRAMFILES%") + "\\steam\\" + dota_path
 			self.save_config()
@@ -166,6 +185,7 @@ class Annoy():
 		        jokes.append(line.strip())
 		    i += 1
 
+		# if the file didn't contain any lines, return an error
 		if len(jokes) == 0:
 			log.error("Input file doesn't seem to contain any lines. Please make sure {} contains text.".format(self.inf))
 			return False
@@ -203,6 +223,9 @@ class Annoy():
 
 	# Append the exec of this config to the file
 	def append_autoexec(self):
+		# if autoexec.cfg doesn't exist, create it and write the exec call to it
+		# otherwise check if it is already executing annoy.cfg, otherwise append
+		# to the end of the file
 		if not os.path.exists("autoexec.cfg"):
 			o = open("autoexec.cfg", "w")
 			o.write("exec {}\n".format(self.outf))
@@ -276,14 +299,24 @@ class Annoy():
 		print "Downloading pages from Wikipedia. This may take a moment..."
 		f = open(self.inf, "w")
 		pages = []
+
+		# get a list of random wikipedia pages.
+		# wikipedia.random can only get 10 at a time, so call it so many times
 		for x in range(n/10):
-			pages+= (wikipedia.random(10))
+			pages += (wikipedia.random(10))
+		if n%10 > 0:
+			pages += (wikipedia.random(n%10))
 		log.info("Found {} random wikipedia pages".format(len(pages)))
 
+		# get the summary info from all the pages.
+		# this is a lot of pages, so can take some time
 		for page in pages:
 			info = None
 			try:
 				info = wikipedia.page(page)
+
+			# if the request throughs a disambiguation error, try to get the first suggestion
+			# if that files, just give up on that reqeust. we didn't want it that much anyway
 			except wikipedia.exceptions.DisambiguationError as e:
 				try:
 					info = wikipedia.page(e.options[0])
@@ -293,6 +326,9 @@ class Annoy():
 					continue
 			except wikipedia.exceptions.HTTPTimeoutError:
 				continue
+
+			# save the summary. if it exceeds 127 characters, try to truncate by the first sentence end.
+			# if that fails, write it anyway, but it will give warning when it generates the config
 			s = info.summary.encode("ascii", "ignore").replace("\n", " ")
 			if len(s) < 127:
 				log.info("Wrote line with no edits")
@@ -302,11 +338,13 @@ class Annoy():
 					f.write(s[:s.find(". ")+1] + "\n")
 					log.info("Summary too long, but was truncated")
 				else:
+					f.write(s + "\n")
 					log.info("Summary too long and couldn't truncate")
 		f.close()
 
 	# Copy the default puns into the text file
 	def default_puns(self):
+		# copy defaul.txt to annoy.txt
 		o = open(self.inf, "w")
 		i = open("default.txt", "r")
 		for line in i:
@@ -314,13 +352,19 @@ class Annoy():
 		o.close()
 		i.close()
 
-
+	# Load the config file. If it doesn't exist, create it
 	def load_config(self):
 		f = None
 		path = os.path.join(winpaths.get_appdata(), "Dotannoy")
+
+		# if the dotannoy folder in appdata doesn't exist, create it
 		if not os.path.exists(path):
 			os.makedirs(path)
+
 		path = os.path.join(path, "config.json")
+
+		# if config.json exists, load it
+		# if it doesn't, create a default config file
 		if os.path.exists(path):
 			log.info("Loading config.json")
 			f = open(path, "r")
@@ -328,14 +372,19 @@ class Annoy():
 		else:
 			log.info("Couldn't find config.json. Creating default config")
 			f = open(path, "w")
-			json.dump({"steamapps":""}, f, sort_keys=True, indent=4, separators=(',', ': '))
-			self.config = {"steamapps":""}
+			default_config = {"steamapps":""}
+			json.dump(default_config, f, sort_keys=True, indent=4, separators=(',', ': '))
+			self.config = default_config
+			f.flush()
 		f.close()
 
+	# Save the config file to appdata
 	def save_config(self):
+		# save the config in appdata.
 		f = open(os.path.join(winpaths.get_appdata(), "dotannoy\\config.json"), "w")
 		json.dump(self.config, f, sort_keys=True, indent=4, separators=(',', ': '))
 		f.flush()
 
 		log.info("Saved config.json")
 		f.close()
+
