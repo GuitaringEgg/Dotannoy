@@ -46,10 +46,6 @@ class Annoy():
 				return 1
 
 
-		# save the config file
-		self.save_config()
-
-
 		# Handle input file argument
 		if args.input:
 			if args.input[-4:] == ".txt":
@@ -129,6 +125,7 @@ class Annoy():
 				if os.path.exists(os.path.join(args.steamapps, dota_path)):
 					self.config["steamapps"] = os.path.join(args.steamapps, dota_path)
 					os.chdir(os.path.join(args.steamapps, dota_path))
+					self.save_config()
 					return True
 		else:
 			log.error("Steamapps path given does not exist.")
@@ -148,10 +145,15 @@ class Annoy():
 			self.save_config()
 			return True
 
+		log.info("Current path {} is not a valid dota install".format(os.getcwd()))
+
 		# if the config folder already has the location, change into the directory
 		if self.config["steamapps"]:
 			os.chdir(self.config["steamapps"])
+			self.save_config()
 			return True
+
+		log.info("Config file didn't contain a steamapps folder location")
 
 		# if we can't find it, try and file the steam folder in program files, the default install location
 		if os.path.exists(os.path.expandvars("%PROGRAMFILES%") + "\\steam\\" + dota_path):
@@ -362,6 +364,7 @@ class Annoy():
 			os.makedirs(path)
 
 		path = os.path.join(path, "config.json")
+		log.info("Checking that {} exists".format(path))
 
 		# if config.json exists, load it
 		# if it doesn't, create a default config file
@@ -385,6 +388,6 @@ class Annoy():
 		json.dump(self.config, f, sort_keys=True, indent=4, separators=(',', ': '))
 		f.flush()
 
-		log.info("Saved config.json")
+		log.info("Saved {}".format(os.path.join(winpaths.get_appdata(), "dotannoy\\config.json")))
 		f.close()
 
