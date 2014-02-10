@@ -317,8 +317,16 @@ class Annoy():
 
 
 	def load_config(self):
-		f = open("config.json", "r")
-		self.config = json.load(f)
+		f = None
+		if os.path.exists("config.json"):
+			log.info("Loading config.json")
+			f = open("config.json", "r")
+			self.config = json.load(f)
+		else:
+			log.info("Couldn't find config.json. Creating default config")
+			f = open("config.json", "w")
+			json.dump({"steamapps":""}, f, sort_keys=True, indent=4, separators=(',', ': '))
+			self.config = {"steamapps":""}
 		f.close()
 
 	def save_config(self):
@@ -326,4 +334,5 @@ class Annoy():
 		json.dump(self.config, f, sort_keys=True, indent=4, separators=(',', ': '))
 		f.flush()
 
+		log.info("Saved config.json")
 		f.close()
