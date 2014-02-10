@@ -336,8 +336,8 @@ class Annoy():
 				log.info("Wrote line with no edits")
 				f.write(s + "\n")
 			else:
-				if s.find(". ") != -1:
-					f.write(s[:s.find(". ")+1] + "\n")
+				if s[:127].rfind(". ") != -1:
+					f.write(s[:s[:127].rfind(". ")]+1] + "\n")
 					log.info("Summary too long, but was truncated")
 				else:
 					f.write(s + "\n")
