@@ -171,6 +171,10 @@ class Annoy():
 
 	# Generate the file config file
 	def generate_config(self, args):
+		if not os.path.exists(self.inf):
+			log.error("Annoy.txt doesn't exist in Dota's cfg folder.")
+			return False
+
 		f = open(self.inf, "r")
 		o = open(self.outf, "w")
 
