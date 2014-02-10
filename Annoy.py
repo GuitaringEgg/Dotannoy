@@ -16,7 +16,7 @@ class Annoy():
 	# config settings
 	config = None
 
-	# Default consturcter. Doesn't do anything
+	# Default constructor. Doesn't do anything
 	def __init__(self):
 		pass
 
@@ -98,7 +98,7 @@ class Annoy():
 			elif args.download == self.sites[3]:
 				self.wikipedia_random(100)
 			else:
-				log.error("Unknown site {}. Can't download anything.\n\tUse 'Dotannoy -l' to see a list of avaiable sites.".format(args.download))
+				log.error("Unknown site {}. Can't download anything.\n\tUse 'Dotannoy -l' to see a list of available sites.".format(args.download))
 				return 1
 
 
@@ -162,7 +162,7 @@ class Annoy():
 
 		return False
 
-	# Print a list of avaiable sites to download from
+	# Print a list of available sites to download from
 	def print_sites(self):
 		print "Avoid sites to download jokes from are:\n\t" + "\n\t".join(self.sites)
 		print "\nJust use 'Dotannoy -d SITE_NAME' to download jokes from that site"
@@ -315,8 +315,8 @@ class Annoy():
 			try:
 				info = wikipedia.page(page)
 
-			# if the request throughs a disambiguation error, try to get the first suggestion
-			# if that files, just give up on that reqeust. we didn't want it that much anyway
+			# if the request threw a disambiguation error, try to get the first suggestion
+			# if that files, just give up on that request. we didn't want it that much anyway
 			except wikipedia.exceptions.DisambiguationError as e:
 				try:
 					info = wikipedia.page(e.options[0])
@@ -344,7 +344,7 @@ class Annoy():
 
 	# Copy the default puns into the text file
 	def default_puns(self):
-		# copy defaul.txt to annoy.txt
+		# copy default.txt to annoy.txt
 		o = open(self.inf, "w")
 		i = open("default.txt", "r")
 		for line in i:
