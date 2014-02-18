@@ -56,11 +56,6 @@ Force all lines to be used, even if they exceed the say limit in Dota 2.
 
 To see a full list of available commands, use `-h`
 
-Running from the source files
-----------
-If you do wish to run it for the source files, you'll need the following modules
-- [Dota2Py](https://github.com/andrewsnowden/dota2py)
-
 Future
 -----------
 - Support other source games
