@@ -7,7 +7,7 @@ Dotannoy
 Installation
 -----------
 
-You can download the latest version from the [releases](https://github.com/GuitaringEgg/Dotannoy/releases) section. You can also grab the source and run Dotannoy.py directly. The executable is just a PyInstaller packed executable, for convenience.
+You can download the latest version from the [releases](https://github.com/GuitaringEgg/Dotannoy/releases) section. You can also grab the source and run Dotannoy.py directly. The executable is just the scripts packed with PyInstaller for convience.
 
 Dotannoy can be run from anywhere, although storing it directly in Dota's config folder `\steamapps\common\dota 2 beta\dota\cfg` is recommended.
 
@@ -42,17 +42,26 @@ Say random summary from Wikipedia articles.
 ```
 
 
-Say random jokes from anti-jokes.com and bind `O` to randomise the next line.
+Say random jokes from theoatmeal.com and bind `O` to randomise the next line.
 ```
-> dotannoy --download anti-joke-random --ran-key O
+> dotannoy --download oatmeal-random --ran-key O
 ```
 
 
-Set the location of steamapps and force all lines to be used, even if they exceed the say limit in Dota 2.
+Force all lines to be used, even if they exceed the say limit in Dota 2.
 ```
-> dotannoy --steamapps E:\steam\steamapps -force
+> dotannoy -force
 ```
 
 
 To see a full list of available commands, use `-h`
 
+Running from the source files
+----------
+If you do wish to run it for the source files, you'll need the following modules
+- [Dota2Py](https://github.com/andrewsnowden/dota2py)
+
+Future
+-----------
+- Support other source games
+- Support other sites
